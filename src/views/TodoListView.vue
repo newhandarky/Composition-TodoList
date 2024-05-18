@@ -1,27 +1,34 @@
 <template>
-  <div class="bg-style">
-    <div class="d-flex justify-content-center pt-4">
-      <input type="text" class="newTodo border-0 rounded-3" :placeholder="placeholder"
-      @keydown.enter="addTodo" v-model="newTodo">
-      <button type="button" class="btn btnPlus" @click="addTodo">
-        <img :src="btnImg" alt="">
-      </button>
+  <div class="bg-style px-3">
+    <div class="d-flex justify-content-center">
+      <div class="add-todo pt-4">
+        <div class="position-relative">
+          <input type="text" class="newTodo border-0 rounded-3" :placeholder="placeholder"
+          @keydown.enter="addTodo" v-model="newTodo">
+          <button type="button" class="btn btnPlus position-absolute" @click="addTodo">
+            <img :src="btnImg" alt="">
+          </button>
+        </div>
+      </div>
     </div>
-    <div class="mt-4 bg-white lists rounded-3">
+    <div class="mt-4 bg-white lists rounded-3 shadow py-3 mb-5 bg-body rounded">
       <div class="d-flex justify-content-around">
-        <a class="text-decoration-none d-block w-100 text-center py-3 border-3 border-dark border-bottom" href="#">
-          <span class="text-dark fw-bold">全部</span>
+        <a class="text-decoration-none d-block w-100 text-center pb-2 border-3 border-bottom"
+        @click="selected = 'all'" :class="{'border-dark' : selected === 'all'}" href="#">
+          <span class="text-secondary " :class="{'text-dark fw-bold' : selected === 'all'}">全部</span>
         </a>
-        <a class="text-decoration-none d-block w-100 text-center py-3 border-3  border-bottom" href="#">
-          <span class="text-dark fw-bold">待完成</span>
+        <a class="text-decoration-none d-block w-100 text-center pb-2 border-3 border-bottom"
+        @click="selected = 'notCompleted'" :class="{'border-dark' : selected === 'notCompleted'}"  href="#">
+          <span class="text-secondary " :class="{'text-dark fw-bold' : selected === 'notCompleted'}">待完成</span>
         </a>
-        <a class="text-decoration-none d-block w-100 text-center py-3 border-3  border-bottom" href="#">
-          <span class="text-dark fw-bold">已完成</span>
+        <a class="text-decoration-none d-block w-100 text-center pb-2 border-3 border-bottom"
+        @click="selected = 'done'" :class="{'border-dark' : selected === 'done'}" href="#">
+          <span class="text-secondary " :class="{'text-dark fw-bold' : selected === 'done'}">已完成</span>
         </a>
       </div>
       <div class="px-3">
         <ul class="p-3 m-0">
-          <li v-for="list in lists" :key="list.id" @dblclick="list.openEdit = !list.openEdit"
+          <li v-for="list in checkList" :key="list.id" @dblclick="openEdit(list)"
           class="py-2 border-2 border-bottom d-flex justify-content-between">
             <div v-if="list.openEdit">
               <input type="checkbox" 
@@ -31,7 +38,7 @@
               </label>
             </div>
             <div v-else>
-              AAA
+              <input type="text" ref="inputDom" v-model.trim="list.text" @keydown.enter="updateTodo(list)">
             </div>
             <button type="button" class="btn p-0 px-2 removeBtn" @click="removeTodo(list.id)">Ｘ</button>
           </li>
@@ -39,10 +46,10 @@
       </div>
       <div class="d-flex justify-content-between px-3">
         <div class="p-3">
-          <span>{{ lists.length }} 個待完成項目</span>
+          <span>{{ notCompleted }} 個待完成項目</span>
         </div>
         <div class="p-3">
-          <a href="#" class="text-decoration-none text-secondary">清除已完成項目</a>
+          <a href="#" class="text-decoration-none text-secondary" @click="removeAll">清除已完成項目</a>
         </div>
       </div>
     </div>
@@ -50,14 +57,18 @@
 </template>
 
 <script setup>
-import { ref, watchEffect } from 'vue';
+import { computed, ref, watchEffect } from 'vue';
+
 const placeholder = ref('新增待辦事項')
 const btnImg = ref('src/assets/plus.png')
 
 const localData = JSON.parse(localStorage.getItem('todos') || '[]')
 
+const inputDom = ref(null);
 const newTodo = ref('')
 const lists = ref(localData)
+const selected = ref('all')
+const notCompleted = ref(0)
 
 // 新增
 const addTodo = () => {
@@ -79,15 +90,51 @@ const removeTodo = (listId) => {
   })
   lists.value.splice(id, 1)
 }
+const removeAll = () => {
+  lists.value = []
+}
 
 // 編輯
-// const editTodo = () => {
-  
-// }
+const openEdit = (item) => {  
+  item.openEdit = false
+}
+const updateTodo = (item) => {
+  newTodo.value = item.text
+  if(newTodo.value) {
+    item.openEdit = true
+    newTodo.value = ''
+  } else {
+    alert('請勿空白')
+  }
+}
+
+// 計算未完成todo數量
+const countTodo = () => {
+  let num = 0
+  lists.value.forEach((item) => {
+    if(item.isDone === false) {
+      num++
+    }
+  })
+  return num
+}
+
+// 切換頁籤
+const checkList = computed(() => {
+  if (selected.value === 'all') {
+    return lists.value;
+  } else {
+    return selected.value === 'done'
+      ? lists.value.filter(item => item.isDone === true)
+      : lists.value.filter(item => item.isDone === false);
+  }
+});
 
 // 自動儲存
 watchEffect(() => {
   localStorage.setItem('todos', JSON.stringify(lists.value))
+
+  notCompleted.value = countTodo()
 })
 
 </script>
@@ -104,8 +151,12 @@ ul li {
 }
 
 .lists {
-  width: 500px;
+  max-width: 500px;
   margin: 0 auto;
+}
+
+.add-todo{
+  width: 500px;
 }
 .newTodo{
   width: 500px;
@@ -113,11 +164,18 @@ ul li {
 }
 
 .btnPlus{
-  margin-left: -60px;
+  right: -8px;
+  bottom: -2px;
 }
 
 .removeBtn {
   margin-right: -30px;
+}
+
+@media (max-width: 576px){
+  .newTodo {
+    width: 100%;
+  }
 }
 
 </style>

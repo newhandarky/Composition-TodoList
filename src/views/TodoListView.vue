@@ -21,12 +21,17 @@
       </div>
       <div class="px-3">
         <ul class="p-3 m-0">
-          <li v-for="list in lists" :key="list.id" class="py-2 border-2 border-bottom d-flex justify-content-between">
-            <div>
-              <input type="checkbox" :name="list.id" :id="list.id" v-model="list.isDone">
+          <li v-for="list in lists" :key="list.id" @dblclick="list.openEdit = !list.openEdit"
+          class="py-2 border-2 border-bottom d-flex justify-content-between">
+            <div v-if="list.openEdit">
+              <input type="checkbox" 
+              :name="list.id" :id="list.id" v-model="list.isDone">
               <label :for="list.id">
                 <span class="ms-3" :class="{ 'text-decoration-line-through': list.isDone}">{{ list.text }}</span>
               </label>
+            </div>
+            <div v-else>
+              AAA
             </div>
             <button type="button" class="btn p-0 px-2 removeBtn" @click="removeTodo(list.id)">Ｘ</button>
           </li>
@@ -60,7 +65,8 @@ const addTodo = () => {
     lists.value.push({
       id: Date.now(),
       text: newTodo.value,
-      isDone: false
+      isDone: false,
+      openEdit: true
     })
     newTodo.value = ''
   }
@@ -73,6 +79,11 @@ const removeTodo = (listId) => {
   })
   lists.value.splice(id, 1)
 }
+
+// 編輯
+// const editTodo = () => {
+  
+// }
 
 // 自動儲存
 watchEffect(() => {

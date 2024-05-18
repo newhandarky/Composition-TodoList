@@ -71,8 +71,7 @@ const removeTodo = (listId) => {
   const id = lists.value.findIndex((item) => {
     return item.id === listId
   })
-  console.log(listId);
-  lists.value.slice(id, 1)
+  lists.value.splice(id, 1)
 }
 
 // 自動儲存
